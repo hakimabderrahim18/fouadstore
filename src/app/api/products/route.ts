@@ -181,7 +181,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        product: newProduct,
+        product: {
+          _id: newProduct._id.toString(),
+          name: newProduct.name,
+          nameAr: newProduct.nameAr,
+          slug: newProduct.slug,
+          description: newProduct.description,
+          descriptionAr: newProduct.descriptionAr,
+          price: newProduct.price,
+          promoPrice: newProduct.promoPrice,
+          images: newProduct.images || [],
+          stock: newProduct.stock,
+          category: newProduct.category,
+          variants: newProduct.variants,
+          createdAt: newProduct.createdAt ? newProduct.createdAt.toISOString() : new Date().toISOString(),
+          updatedAt: newProduct.updatedAt ? newProduct.updatedAt.toISOString() : new Date().toISOString(),
+        },
         message: "Produit créé avec succès.",
       },
       { status: 201 }

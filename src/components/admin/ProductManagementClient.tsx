@@ -3,6 +3,7 @@
 import React, { useState, useMemo } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Plus,
   Search,
@@ -59,6 +60,7 @@ export default function ProductManagementClient({
   initialProducts,
   categories,
 }: ProductManagementClientProps) {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("Toutes");
@@ -165,6 +167,7 @@ export default function ProductManagementClient({
         body: JSON.stringify({ stock: newStock }),
       });
       if (!res.ok) throw new Error("Erreur mise à jour stock");
+      router.refresh();
     } catch (err) {
       console.error(err);
       // Revert if error
@@ -231,6 +234,7 @@ export default function ProductManagementClient({
           prev.map((p) => (p._id === formData._id ? data.product : p))
         );
         showToast("Produit modifié avec succès !");
+        router.refresh();
       } else {
         // POST
         const res = await fetch("/api/products", {
@@ -245,6 +249,7 @@ export default function ProductManagementClient({
 
         setProducts((prev) => [data.product, ...prev]);
         showToast("Nouveau produit ajouté au catalogue !");
+        router.refresh();
       }
 
       setIsModalOpen(false);
@@ -272,6 +277,7 @@ export default function ProductManagementClient({
       setProducts((prev) => prev.filter((p) => p._id !== productToDelete._id));
       showToast(`Le produit "${productToDelete.name}" a été supprimé.`);
       setProductToDelete(null);
+      router.refresh();
     } catch (err) {
       console.error(err);
       alert("Impossible de supprimer le produit.");

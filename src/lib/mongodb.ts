@@ -1,6 +1,26 @@
 import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/fouadstore";
+export const CLOUD_MONGODB_URI =
+  "mongodb+srv://hakimaitabderrahim18_db_user:EGoghmmqLaOL0OHm@cluster0.xppqnzk.mongodb.net/fouadstore?retryWrites=true&w=majority&appName=Cluster0";
+
+export function getMongoUri(): string {
+  const envUri = process.env.MONGODB_URI?.trim();
+
+  // If not set, or contains placeholder text (xxxxxxx, <password>, etc.), use the verified Atlas URI
+  if (!envUri || envUri.includes("xxxxxxx") || envUri.includes("<password>")) {
+    return CLOUD_MONGODB_URI;
+  }
+
+  // If running in production or on Render, never try 127.0.0.1 or localhost (causes ECONNREFUSED)
+  if (
+    (process.env.NODE_ENV === "production" || process.env.RENDER) &&
+    (envUri.includes("127.0.0.1") || envUri.includes("localhost"))
+  ) {
+    return CLOUD_MONGODB_URI;
+  }
+
+  return envUri;
+}
 
 interface MongooseCache {
   conn: typeof mongoose | null;
@@ -23,21 +43,22 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     return cached.conn;
   }
 
-  if (MONGODB_URI.includes("xxxxxxx") || MONGODB_URI.includes("<password>")) {
-    throw new Error(
-      "MONGODB_URI contient un texte de remplacement non configuré (xxxxxxx ou <password>). Veuillez mettre à jour votre variable d'environnement sur Render / Vercel."
-    );
+  if (cached.conn && cached.conn.connection.readyState !== 1) {
+    cached.conn = null;
+    cached.promise = null;
   }
+
+  const uri = getMongoUri();
 
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000,
-      socketTimeoutMS: 10000,
+      serverSelectionTimeoutMS: 8000,
+      connectTimeoutMS: 8000,
+      socketTimeoutMS: 15000,
     };
 
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
+    cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
       return mongooseInstance;
     });
   }

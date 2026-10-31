@@ -1,6 +1,13 @@
 const mongoose = require("mongoose");
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/fouadstore";
+const CLOUD_MONGODB_URI =
+  "mongodb+srv://hakimaitabderrahim18_db_user:EGoghmmqLaOL0OHm@cluster0.xppqnzk.mongodb.net/fouadstore?retryWrites=true&w=majority&appName=Cluster0";
+
+const rawUri = process.env.MONGODB_URI && process.env.MONGODB_URI.trim();
+const MONGODB_URI =
+  !rawUri || rawUri.includes("xxxxxxx") || rawUri.includes("<password>")
+    ? CLOUD_MONGODB_URI
+    : rawUri;
 
 // 1. Account Seed
 const initialAdminAccount = {

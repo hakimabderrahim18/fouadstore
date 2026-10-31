@@ -121,9 +121,31 @@ export async function PUT(
       { new: true, runValidators: true }
     );
 
+    if (!updatedProduct) {
+      return NextResponse.json(
+        { success: false, error: "Produit introuvable." },
+        { status: 404 }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      product: updatedProduct,
+      product: {
+        _id: updatedProduct._id.toString(),
+        name: updatedProduct.name,
+        nameAr: updatedProduct.nameAr,
+        slug: updatedProduct.slug,
+        description: updatedProduct.description,
+        descriptionAr: updatedProduct.descriptionAr,
+        price: updatedProduct.price,
+        promoPrice: updatedProduct.promoPrice,
+        images: updatedProduct.images || [],
+        stock: updatedProduct.stock,
+        category: updatedProduct.category,
+        variants: updatedProduct.variants,
+        createdAt: updatedProduct.createdAt ? updatedProduct.createdAt.toISOString() : new Date().toISOString(),
+        updatedAt: updatedProduct.updatedAt ? updatedProduct.updatedAt.toISOString() : new Date().toISOString(),
+      },
       message: "Produit mis à jour avec succès.",
     });
   } catch (error) {

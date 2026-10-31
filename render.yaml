@@ -10,7 +10,7 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: MONGODB_URI
-        sync: false
+        value: "mongodb+srv://hakimaitabderrahim18_db_user:EGoghmmqLaOL0OHm@cluster0.xppqnzk.mongodb.net/fouadstore?retryWrites=true&w=majority&appName=Cluster0"
       - key: NEXT_PUBLIC_STORE_NAME
         value: "Frères Zeboudj"
       - key: NEXT_PUBLIC_STORE_NAME_AR
