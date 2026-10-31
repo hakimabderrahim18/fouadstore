@@ -1,0 +1,31 @@
+services:
+  - type: web
+    name: fouadstore
+    runtime: node
+    plan: free
+    region: frankfurt
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 20
+      - key: MONGODB_URI
+        sync: false
+      - key: NEXT_PUBLIC_STORE_NAME
+        value: "Frères Zeboudj"
+      - key: NEXT_PUBLIC_STORE_NAME_AR
+        value: "محل الإخوة زبوج"
+      - key: NEXT_PUBLIC_STORE_TAGLINE
+        value: "Huiles Moteur & Accessoires Automobiles"
+      - key: NEXT_PUBLIC_STORE_TAGLINE_AR
+        value: "للزيوت و لوازم السيارات"
+      - key: NEXT_PUBLIC_WHATSAPP_PHONE
+        value: "213555460770"
+      - key: NEXT_PUBLIC_SECONDARY_PHONE
+        value: "0542816442"
+      - key: NEXT_PUBLIC_CURRENCY
+        value: "DA"
+      - key: ADMIN_PASSWORD
+        value: "fouad97"
+      - key: ADMIN_SECRET
+        generateValue: true
