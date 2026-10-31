@@ -42,6 +42,7 @@ export default function CheckoutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [targetWhatsappUrl, setTargetWhatsappUrl] = useState("");
+  const [formErrorMessage, setFormErrorMessage] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState("");
 
@@ -76,30 +77,46 @@ export default function CheckoutPage() {
     const cleanPhone = phone.trim().replace(/[\s.-]/g, "");
     if (!cleanPhone) {
       errs.phone = t.requiredField;
-    } else if (
-      !/^(0[567][0-9]{8}|213[567][0-9]{8}|\+213[567][0-9]{8})$/.test(cleanPhone)
-    ) {
+    } else if (cleanPhone.length < 8) {
       errs.phone = t.invalidPhone;
     }
 
-    if (!commune.trim()) {
-      errs.commune = t.requiredField;
-    }
-
-    if (!address.trim()) {
-      errs.address = t.requiredField;
-    }
-
     setErrors(errs);
-    return Object.keys(errs).length === 0;
+
+    if (Object.keys(errs).length > 0) {
+      const missingList: string[] = [];
+      if (errs.fullName) missingList.push(lang === "ar" ? "الاسم الكامل" : "Nom et Prénom");
+      if (errs.phone) missingList.push(lang === "ar" ? "رقم الهاتف" : "Numéro de téléphone");
+
+      const msg =
+        lang === "ar"
+          ? `يرجى إدخال: ${missingList.join(" و ")}`
+          : `Veuillez renseigner : ${missingList.join(" et ")}`;
+
+      setFormErrorMessage(msg);
+
+      // Smooth scroll to first error field
+      const firstKey = Object.keys(errs)[0];
+      const el = document.getElementById(`field-${firstKey}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        el.focus();
+      }
+      return false;
+    }
+
+    setFormErrorMessage("");
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setServerError("");
+    setFormErrorMessage("");
 
     if (cart.length === 0) {
       setServerError(t.cartEmpty);
+      setFormErrorMessage(t.cartEmpty);
       return;
     }
 
@@ -110,6 +127,25 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
+      // Smart fallbacks for Algerian e-commerce convenience
+      const effectiveCommune =
+        commune.trim() ||
+        (selectedWilaya.communes && selectedWilaya.communes.length > 0
+          ? selectedWilaya.communes[0]
+          : lang === "ar"
+          ? selectedWilaya.nameAr
+          : selectedWilaya.name);
+
+      const effectiveAddress =
+        address.trim() ||
+        (deliveryMode === "bureau"
+          ? lang === "ar"
+            ? "استلام من مكتب التوصيل (Stop Desk)"
+            : "Récupération Stop Desk (Bureau)"
+          : lang === "ar"
+          ? selectedWilaya.nameAr
+          : selectedWilaya.name);
+
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -119,8 +155,8 @@ export default function CheckoutPage() {
             phone: phone.trim(),
             wilayaCode: selectedWilaya.code,
             wilayaName: lang === "ar" ? selectedWilaya.nameAr : selectedWilaya.name,
-            commune: commune.trim(),
-            address: address.trim(),
+            commune: effectiveCommune,
+            address: effectiveAddress,
             note: note.trim(),
           },
           deliveryMode,
@@ -160,15 +196,13 @@ export default function CheckoutPage() {
       if (typeof window !== "undefined") {
         window.history.replaceState(null, "", `/confirmation/${orderNumber}`);
         // Immediately redirect to WhatsApp with the pre-filled order message
-        setTimeout(() => {
-          window.location.href = whatsappUrl;
-        }, 400);
+        window.location.href = whatsappUrl;
       }
     } catch (err: unknown) {
       console.error("Order submission failed:", err);
-      setServerError(
-        err instanceof Error ? err.message : "Une erreur inattendue est survenue."
-      );
+      const msg = err instanceof Error ? err.message : "Une erreur inattendue est survenue.";
+      setServerError(msg);
+      setFormErrorMessage(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -232,6 +266,7 @@ export default function CheckoutPage() {
               </label>
               <div className="relative">
                 <input
+                  id="field-fullName"
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
@@ -258,6 +293,7 @@ export default function CheckoutPage() {
                   <Phone className="w-4 h-4" />
                 </div>
                 <input
+                  id="field-phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
@@ -307,6 +343,7 @@ export default function CheckoutPage() {
                 {selectedWilaya.communes && selectedWilaya.communes.length > 0 ? (
                   <div className="space-y-1.5">
                     <input
+                      id="field-commune"
                       type="text"
                       list="communes-list"
                       value={commune}
@@ -326,6 +363,7 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <input
+                    id="field-commune"
                     type="text"
                     value={commune}
                     onChange={(e) => setCommune(e.target.value)}
@@ -349,6 +387,7 @@ export default function CheckoutPage() {
                   <MapPin className="w-4 h-4" />
                 </div>
                 <textarea
+                  id="field-address"
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   placeholder={t.addressPlaceholder}
@@ -537,6 +576,14 @@ export default function CheckoutPage() {
                 </span>
               </div>
             </div>
+
+            {/* Direct Error Notice above Submit Button */}
+            {(formErrorMessage || serverError) && (
+              <div className="p-3.5 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs sm:text-sm font-bold flex items-start gap-2.5 animate-in fade-in duration-200 shadow-xs">
+                <AlertCircle className="w-5 h-5 flex-shrink-0 text-rose-600 mt-0.5" />
+                <span>{formErrorMessage || serverError}</span>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button
