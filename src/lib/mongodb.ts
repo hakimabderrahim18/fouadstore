@@ -6,15 +6,15 @@ export const CLOUD_MONGODB_URI =
 export function getMongoUri(): string {
   const envUri = process.env.MONGODB_URI?.trim();
 
-  // If not set, or contains placeholder text (xxxxxxx, <password>, etc.), use the verified Atlas URI
-  if (!envUri || envUri.includes("xxxxxxx") || envUri.includes("<password>")) {
-    return CLOUD_MONGODB_URI;
-  }
-
-  // If running in production or on Render, never try 127.0.0.1 or localhost (causes ECONNREFUSED)
+  // If not set, or contains placeholder text, or points to localhost/127.0.0.1, always use the verified Atlas URI
   if (
-    (process.env.NODE_ENV === "production" || process.env.RENDER) &&
-    (envUri.includes("127.0.0.1") || envUri.includes("localhost"))
+    !envUri ||
+    envUri === "undefined" ||
+    envUri === "null" ||
+    envUri.includes("xxxxxxx") ||
+    envUri.includes("<password>") ||
+    envUri.includes("127.0.0.1") ||
+    envUri.includes("localhost")
   ) {
     return CLOUD_MONGODB_URI;
   }
@@ -59,6 +59,8 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     };
 
     cached.promise = mongoose.connect(uri, opts).then((mongooseInstance) => {
+      const host = mongooseInstance.connection.host || "MongoDB Atlas";
+      console.log(`[MongoDB] Connected successfully to host: ${host}`);
       return mongooseInstance;
     });
   }
@@ -67,6 +69,7 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
     cached.conn = await cached.promise;
   } catch (e) {
     cached.promise = null;
+    console.error("[MongoDB] Connection error:", e);
     throw e;
   }
 
