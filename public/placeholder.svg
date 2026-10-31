@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="400" viewBox="0 0 400 400" fill="none">
+  <rect width="400" height="400" fill="#F1F5F9"/>
+  <rect x="130" y="130" width="140" height="140" rx="20" fill="#E2E8F0"/>
+  <circle cx="170" cy="180" r="16" fill="#94A3B8"/>
+  <path d="M145 235L185 195L215 225L240 200L255 215V245C255 250.523 250.523 255 245 255H155C149.477 255 145 250.523 145 245V235Z" fill="#94A3B8"/>
+  <text x="200" y="300" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="600" fill="#64748B">FOUADstore</text>
+</svg>
