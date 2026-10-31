@@ -1,6 +1,7 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { ProductModel } from "@/models/Product";
-import { initialProducts } from "@/lib/seed-data";
+import { UserModel } from "@/models/User";
+import { initialProducts, initialAdminAccount } from "@/lib/seed-data";
 import HomeProductGrid from "@/components/HomeProductGrid";
 import { Product } from "@/lib/types";
 
@@ -12,6 +13,11 @@ async function getInitialProducts() {
     const count = await ProductModel.countDocuments();
     if (count === 0) {
       await ProductModel.insertMany(initialProducts);
+    }
+
+    const userCount = await UserModel.countDocuments();
+    if (userCount === 0) {
+      await UserModel.create(initialAdminAccount);
     }
 
     const limit = 12;

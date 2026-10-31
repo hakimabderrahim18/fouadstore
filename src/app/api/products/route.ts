@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/mongodb";
 import { ProductModel } from "@/models/Product";
-import { initialProducts } from "@/lib/seed-data";
+import { UserModel } from "@/models/User";
+import { initialProducts, initialAdminAccount } from "@/lib/seed-data";
 
 export const dynamic = "force-dynamic";
 
@@ -9,10 +10,15 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
-    // Auto-seed if database has 0 products
+    // Auto-seed if database has 0 products or 0 users
     const count = await ProductModel.countDocuments();
     if (count === 0) {
       await ProductModel.insertMany(initialProducts);
+    }
+
+    const userCount = await UserModel.countDocuments();
+    if (userCount === 0) {
+      await UserModel.create(initialAdminAccount);
     }
 
     const { searchParams } = new URL(request.url);
