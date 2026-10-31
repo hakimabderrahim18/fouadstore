@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -30,6 +30,15 @@ export default function ConfirmationClient({ order }: ConfirmationClientProps) {
   const [copied, setCopied] = useState(false);
 
   const whatsappUrl = buildWhatsAppUrl(order, lang);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (params.get("auto") === "1" || params.get("whatsapp") === "1") {
+        window.location.href = whatsappUrl;
+      }
+    }
+  }, [whatsappUrl]);
 
   const handleCopyOrderNumber = () => {
     navigator.clipboard.writeText(order.orderNumber);

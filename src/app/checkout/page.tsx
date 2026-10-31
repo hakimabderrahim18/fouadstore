@@ -17,6 +17,7 @@ import {
   ArrowLeft,
   AlertCircle,
   ShoppingBag,
+  MessageCircle,
 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -39,6 +40,8 @@ export default function CheckoutPage() {
 
   // Status & Validation
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [targetWhatsappUrl, setTargetWhatsappUrl] = useState("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [serverError, setServerError] = useState("");
 
@@ -150,16 +153,17 @@ export default function CheckoutPage() {
 
       // Clear the cart
       clearCart();
+      setTargetWhatsappUrl(whatsappUrl);
+      setIsRedirecting(true);
 
-      // Open WhatsApp in new tab / window
-      try {
-        window.open(whatsappUrl, "_blank");
-      } catch (err) {
-        console.warn("Could not auto-open WhatsApp:", err);
+      // Pre-set history so browser Back button will return to confirmation page
+      if (typeof window !== "undefined") {
+        window.history.replaceState(null, "", `/confirmation/${orderNumber}`);
+        // Immediately redirect to WhatsApp with the pre-filled order message
+        setTimeout(() => {
+          window.location.href = whatsappUrl;
+        }, 400);
       }
-
-      // Navigate to confirmation page
-      router.push(`/confirmation/${orderNumber}`);
     } catch (err: unknown) {
       console.error("Order submission failed:", err);
       setServerError(
@@ -562,6 +566,39 @@ export default function CheckoutPage() {
           </div>
         </div>
       </form>
+
+      {/* WhatsApp Auto-Redirect Overlay */}
+      {isRedirecting && (
+        <div className="fixed inset-0 z-50 bg-slate-900/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-in fade-in duration-200">
+          <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mb-5 ring-8 ring-emerald-500/10 animate-pulse">
+            <MessageCircle className="w-10 h-10 fill-emerald-500 text-white" />
+          </div>
+          <h2 className="text-2xl sm:text-3xl font-black text-white mb-2">
+            {lang === "ar" ? "تم تسجيل طلبكم بنجاح !" : "Commande enregistrée avec succès !"}
+          </h2>
+          <p className="text-emerald-300 text-sm sm:text-base font-semibold max-w-md mb-6">
+            {lang === "ar"
+              ? "جاري تحويلكم تلقائياً إلى تطبيق واتساب لإرسال الطلب لمحل الإخوة زبوج..."
+              : "Redirection automatique vers WhatsApp pour envoyer votre commande aux Frères Zeboudj..."}
+          </p>
+          <div className="flex items-center gap-2 text-white/80 text-sm mb-6">
+            <Loader2 className="w-5 h-5 animate-spin text-emerald-400" />
+            <span>{lang === "ar" ? "يرجى الانتظار..." : "Veuillez patienter..."}</span>
+          </div>
+
+          {targetWhatsappUrl && (
+            <a
+              href={targetWhatsappUrl}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm shadow-lg shadow-emerald-600/30 transition-all active:scale-95"
+            >
+              <MessageCircle className="w-4 h-4 fill-white" />
+              <span>
+                {lang === "ar" ? "اضغط هنا إذا لم يفتح واتساب تلقائياً" : "Cliquez ici si WhatsApp ne s'ouvre pas"}
+              </span>
+            </a>
+          )}
+        </div>
+      )}
     </div>
   );
 }
