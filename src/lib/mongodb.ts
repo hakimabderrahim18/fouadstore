@@ -19,13 +19,22 @@ if (!global.mongooseCache) {
 }
 
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  if (cached.conn) {
+  if (cached.conn && cached.conn.connection.readyState === 1) {
     return cached.conn;
+  }
+
+  if (MONGODB_URI.includes("xxxxxxx") || MONGODB_URI.includes("<password>")) {
+    throw new Error(
+      "MONGODB_URI contient un texte de remplacement non configuré (xxxxxxx ou <password>). Veuillez mettre à jour votre variable d'environnement sur Render / Vercel."
+    );
   }
 
   if (!cached.promise) {
     const opts: mongoose.ConnectOptions = {
       bufferCommands: false,
+      serverSelectionTimeoutMS: 5000,
+      connectTimeoutMS: 5000,
+      socketTimeoutMS: 10000,
     };
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongooseInstance) => {
