@@ -33,7 +33,11 @@ export default function CheckoutPage() {
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [wilayaCode, setWilayaCode] = useState("16"); // Default Alger
-  const [commune, setCommune] = useState("");
+  const [commune, setCommune] = useState(
+    ALGERIA_WILAYAS.find((w) => w.code === "16")?.communes?.[0] || "Alger-Centre"
+  );
+  const [isCustomCommune, setIsCustomCommune] = useState(false);
+  const [customCommune, setCustomCommune] = useState("");
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("domicile");
@@ -73,7 +77,10 @@ export default function CheckoutPage() {
   // Handle Wilaya change
   const handleWilayaChange = (code: string) => {
     setWilayaCode(code);
-    setCommune(""); // Reset commune when wilaya changes
+    const targetW = ALGERIA_WILAYAS.find((w) => w.code === code);
+    setCommune(targetW?.communes?.[0] || "");
+    setIsCustomCommune(false);
+    setCustomCommune("");
     setSelectedAgencyIndex(0);
   };
 
@@ -139,7 +146,7 @@ export default function CheckoutPage() {
     try {
       // Smart fallbacks for Algerian e-commerce convenience
       const effectiveCommune =
-        commune.trim() ||
+        (isCustomCommune ? customCommune.trim() : commune.trim()) ||
         (selectedWilaya.communes && selectedWilaya.communes.length > 0
           ? selectedWilaya.communes[0]
           : lang === "ar"
@@ -350,37 +357,58 @@ export default function CheckoutPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
                   {t.commune} <span className="text-rose-500">*</span>
                 </label>
-                {selectedWilaya.communes && selectedWilaya.communes.length > 0 ? (
-                  <div className="space-y-1.5">
-                    <input
-                      id="field-commune"
-                      type="text"
-                      list="communes-list"
-                      value={commune}
-                      onChange={(e) => setCommune(e.target.value)}
-                      placeholder={t.selectCommune}
-                      className={`w-full px-4 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:outline-none focus:ring-2 transition-all ${
-                        errors.commune
-                          ? "border-rose-400 focus:ring-rose-500/20"
-                          : "border-slate-200 focus:border-blue-600 focus:ring-blue-500/20"
-                      }`}
-                    />
-                    <datalist id="communes-list">
-                      {selectedWilaya.communes.map((c) => (
-                        <option key={c} value={c} />
-                      ))}
-                    </datalist>
-                  </div>
-                ) : (
-                  <input
+                <div className="space-y-2">
+                  <select
                     id="field-commune"
-                    type="text"
-                    value={commune}
-                    onChange={(e) => setCommune(e.target.value)}
-                    placeholder={t.commune}
-                    className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50/50 text-slate-900 text-sm focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-500/20"
-                  />
-                )}
+                    value={isCustomCommune ? "__autre__" : commune}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "__autre__") {
+                        setIsCustomCommune(true);
+                      } else {
+                        setIsCustomCommune(false);
+                        setCommune(val);
+                      }
+                    }}
+                    className={`w-full px-4 py-3 rounded-xl border bg-slate-50/50 text-slate-900 text-sm focus:outline-none focus:ring-2 transition-all cursor-pointer ${
+                      errors.commune
+                        ? "border-rose-400 focus:ring-rose-500/20"
+                        : "border-slate-200 focus:border-blue-600 focus:ring-blue-500/20"
+                    }`}
+                  >
+                    {selectedWilaya.communes && selectedWilaya.communes.length > 0 ? (
+                      selectedWilaya.communes.map((c) => (
+                        <option key={c} value={c}>
+                          {c}
+                        </option>
+                      ))
+                    ) : (
+                      <option value={lang === "ar" ? selectedWilaya.nameAr : selectedWilaya.name}>
+                        {lang === "ar" ? selectedWilaya.nameAr : selectedWilaya.name}
+                      </option>
+                    )}
+                    <option value="__autre__">
+                      {lang === "ar"
+                        ? "✍️ بلدية أو قرية أخرى (كتابة يدوية)..."
+                        : "✍️ Autre commune / village (saisie libre)..."}
+                    </option>
+                  </select>
+
+                  {isCustomCommune && (
+                    <input
+                      type="text"
+                      value={customCommune}
+                      onChange={(e) => setCustomCommune(e.target.value)}
+                      placeholder={
+                        lang === "ar"
+                          ? "اكتب اسم بلديتك أو منطقتك هنا..."
+                          : "Écrivez le nom de votre commune ou village..."
+                      }
+                      autoFocus
+                      className="w-full px-4 py-2.5 rounded-xl border border-blue-400 bg-white text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
+                    />
+                  )}
+                </div>
                 {errors.commune && (
                   <p className="mt-1 text-xs text-rose-500 font-medium">{errors.commune}</p>
                 )}
