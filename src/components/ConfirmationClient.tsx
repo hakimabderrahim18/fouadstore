@@ -150,15 +150,34 @@ export default function ConfirmationClient({ order }: ConfirmationClientProps) {
               {order.deliveryMode === "domicile" ? (
                 <>
                   <Truck className="w-4 h-4 text-blue-600 flex-shrink-0" />
-                  <span className="font-medium">{t.homeDelivery}</span>
+                  <span className="font-medium">{t.homeDelivery} (NOEST Express)</span>
                 </>
               ) : (
                 <>
                   <Building className="w-4 h-4 text-purple-600 flex-shrink-0" />
-                  <span className="font-medium">{t.deskDelivery}</span>
+                  <span className="font-medium">{t.deskDelivery} (NOEST Express)</span>
                 </>
               )}
             </div>
+
+            {order.deliveryMode === "bureau" && order.customer.stopDeskAgency && (
+              <div className="p-3.5 bg-purple-50 rounded-2xl border border-purple-100 text-xs text-purple-950 space-y-1.5">
+                <div className="font-bold flex items-center gap-1.5 text-purple-900">
+                  <Building className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Agence de retrait : {order.customer.stopDeskAgency.name}</span>
+                </div>
+                <div className="text-slate-600 flex items-start gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-purple-500 mt-0.5 flex-shrink-0" />
+                  <span>{order.customer.stopDeskAgency.address}</span>
+                </div>
+                {order.customer.stopDeskAgency.phone && (
+                  <div className="font-semibold text-purple-800 flex items-center gap-1">
+                    <Phone className="w-3.5 h-3.5 text-purple-500 flex-shrink-0" />
+                    <span dir="ltr">{order.customer.stopDeskAgency.phone}</span>
+                  </div>
+                )}
+              </div>
+            )}
 
             {order.customer.note && (
               <div className="bg-slate-50 p-3 rounded-xl text-xs text-slate-600 italic">

@@ -37,6 +37,7 @@ export default function CheckoutPage() {
   const [address, setAddress] = useState("");
   const [note, setNote] = useState("");
   const [deliveryMode, setDeliveryMode] = useState<DeliveryMode>("domicile");
+  const [selectedAgencyIndex, setSelectedAgencyIndex] = useState<number>(0);
 
   // Status & Validation
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -51,7 +52,15 @@ export default function CheckoutPage() {
     return ALGERIA_WILAYAS.find((w) => w.code === wilayaCode) || ALGERIA_WILAYAS[15]; // Default Alger
   }, [wilayaCode]);
 
-  // Dynamic Shipping Fee based on wilaya & mode
+  // Selected Stop Desk Agency (if bureau mode)
+  const selectedAgency = useMemo(() => {
+    if (!selectedWilaya.stopDeskAgencies || selectedWilaya.stopDeskAgencies.length === 0) {
+      return undefined;
+    }
+    return selectedWilaya.stopDeskAgencies[selectedAgencyIndex] || selectedWilaya.stopDeskAgencies[0];
+  }, [selectedWilaya, selectedAgencyIndex]);
+
+  // Dynamic Shipping Fee based on wilaya & mode (NOEST Express official tariff)
   const shippingFee = useMemo(() => {
     if (!selectedWilaya) return 500;
     return deliveryMode === "bureau"
@@ -65,6 +74,7 @@ export default function CheckoutPage() {
   const handleWilayaChange = (code: string) => {
     setWilayaCode(code);
     setCommune(""); // Reset commune when wilaya changes
+    setSelectedAgencyIndex(0);
   };
 
   const validate = () => {
@@ -137,14 +147,13 @@ export default function CheckoutPage() {
           : selectedWilaya.name);
 
       const effectiveAddress =
-        address.trim() ||
-        (deliveryMode === "bureau"
-          ? lang === "ar"
-            ? "استلام من مكتب التوصيل (Stop Desk)"
-            : "Récupération Stop Desk (Bureau)"
-          : lang === "ar"
-          ? selectedWilaya.nameAr
-          : selectedWilaya.name);
+        deliveryMode === "bureau"
+          ? selectedAgency
+            ? `Stop Desk NOEST - ${selectedAgency.name} (${selectedAgency.address})`
+            : lang === "ar"
+            ? "استلام من مكتب التوصيل Stop Desk (NOEST Express)"
+            : "Récupération Stop Desk (NOEST Express)"
+          : address.trim() || (lang === "ar" ? selectedWilaya.nameAr : selectedWilaya.name);
 
       const response = await fetch("/api/orders", {
         method: "POST",
@@ -157,6 +166,7 @@ export default function CheckoutPage() {
             wilayaName: lang === "ar" ? selectedWilaya.nameAr : selectedWilaya.name,
             commune: effectiveCommune,
             address: effectiveAddress,
+            stopDeskAgency: deliveryMode === "bureau" ? selectedAgency : undefined,
             note: note.trim(),
           },
           deliveryMode,
@@ -474,7 +484,7 @@ export default function CheckoutPage() {
                 onClick={() => setDeliveryMode("bureau")}
                 className={`cursor-pointer p-4 rounded-2xl border-2 transition-all flex flex-col justify-between gap-3 ${
                   deliveryMode === "bureau"
-                    ? "border-blue-600 bg-blue-50/40 ring-2 ring-blue-500/20"
+                    ? "border-purple-600 bg-purple-50/40 ring-2 ring-purple-500/20"
                     : "border-slate-200 bg-slate-50/30 hover:border-slate-300"
                 }`}
               >
@@ -487,7 +497,7 @@ export default function CheckoutPage() {
                       <h3 className="font-bold text-sm text-slate-900">
                         {t.deskDelivery}
                       </h3>
-                      <p className="text-xs text-slate-500">{t.deskDeliveryDesc}</p>
+                      <p className="text-xs text-slate-500">Stop Desk NOEST Express</p>
                     </div>
                   </div>
                   <input
@@ -495,7 +505,7 @@ export default function CheckoutPage() {
                     name="deliveryMode"
                     checked={deliveryMode === "bureau"}
                     onChange={() => setDeliveryMode("bureau")}
-                    className="w-4 h-4 text-blue-600 mt-1"
+                    className="w-4 h-4 text-purple-600 mt-1"
                   />
                 </div>
                 <div className="pt-2 border-t border-slate-200/60 flex justify-between items-baseline">
@@ -506,6 +516,77 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+
+            {/* Stop Desk Agency Details Card */}
+            {deliveryMode === "bureau" && (
+              <div className="p-4 sm:p-5 rounded-2xl bg-purple-50/70 border border-purple-200 space-y-3 animate-in fade-in duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 text-purple-900 font-bold text-xs sm:text-sm">
+                    <Building className="w-4 h-4 text-purple-600 flex-shrink-0" />
+                    <span>
+                      {lang === "ar"
+                        ? "مكتب استلام الطرد (Stop Desk NOEST Express) :"
+                        : "Agence de retrait du colis (Stop Desk NOEST Express) :"}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-purple-200 text-purple-800">
+                    NOEST
+                  </span>
+                </div>
+
+                {/* Multiple agencies dropdown if available */}
+                {selectedWilaya.stopDeskAgencies && selectedWilaya.stopDeskAgencies.length > 1 && (
+                  <div>
+                    <label className="block text-xs font-semibold text-purple-800 mb-1">
+                      {lang === "ar" ? "اختر وكالة الاستلام :" : "Choisissez l'agence de retrait :"}
+                    </label>
+                    <select
+                      value={selectedAgencyIndex}
+                      onChange={(e) => setSelectedAgencyIndex(Number(e.target.value))}
+                      className="w-full px-3 py-2 rounded-xl border border-purple-200 bg-white text-xs sm:text-sm text-slate-800 font-semibold focus:outline-none focus:ring-2 focus:ring-purple-500/20"
+                    >
+                      {selectedWilaya.stopDeskAgencies.map((agency, idx) => (
+                        <option key={idx} value={idx}>
+                          {agency.code ? `[${agency.code}] ` : ""}{lang === "ar" && agency.nameAr ? agency.nameAr : agency.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {/* Agency address & contact details */}
+                {selectedAgency ? (
+                  <div className="bg-white p-3.5 rounded-xl border border-purple-100 text-xs text-slate-700 space-y-1.5 shadow-xs">
+                    <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" />
+                      <span>{lang === "ar" && selectedAgency.nameAr ? selectedAgency.nameAr : selectedAgency.name}</span>
+                    </div>
+                    <div className="flex items-start gap-1.5 text-slate-600">
+                      <MapPin className="w-3.5 h-3.5 text-purple-600 flex-shrink-0 mt-0.5" />
+                      <span>{selectedAgency.address}</span>
+                    </div>
+                    {selectedAgency.phone && (
+                      <div className="flex items-center gap-1.5 text-slate-700 font-semibold">
+                        <Phone className="w-3.5 h-3.5 text-purple-600 flex-shrink-0" />
+                        <span dir="ltr">{selectedAgency.phone}</span>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="bg-white p-3.5 rounded-xl border border-purple-100 text-xs text-slate-600">
+                    {lang === "ar"
+                      ? `سيتم تحويل الطرد إلى المكتب الرئيسي لشركة NOEST بولاية ${selectedWilaya.nameAr}.`
+                      : `Le colis sera disponible au bureau principal NOEST Express de la Wilaya de ${selectedWilaya.name}.`}
+                  </div>
+                )}
+
+                <p className="text-[11px] text-purple-700/80">
+                  ℹ️ {lang === "ar"
+                    ? "سيتصل بكم مندوب NOEST Express أو يرسل لكم رسالة فور وصول الطرد إلى الوكالة لتستلموه."
+                    : "L'agent NOEST Express vous appellera ou vous enverra un SMS dès l'arrivée du colis en agence."}
+                </p>
+              </div>
+            )}
           </div>
         </div>
 

@@ -18,6 +18,12 @@ export interface IOrderCustomer {
   wilayaName: string;
   commune: string;
   address: string;
+  stopDeskAgency?: {
+    code?: string;
+    name: string;
+    address: string;
+    phone?: string;
+  };
   note?: string;
 }
 
@@ -44,6 +50,12 @@ const OrderSchema = new Schema<IOrderDocument>(
       wilayaName: { type: String, required: true },
       commune: { type: String, required: true, trim: true },
       address: { type: String, required: true, trim: true },
+      stopDeskAgency: {
+        code: { type: String },
+        name: { type: String },
+        address: { type: String },
+        phone: { type: String },
+      },
       note: { type: String, trim: true },
     },
     deliveryMode: {

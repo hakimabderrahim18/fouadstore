@@ -48,6 +48,14 @@ export async function POST(request: NextRequest) {
         wilayaName: customer.wilayaName,
         commune: customer.commune.trim(),
         address: customer.address.trim(),
+        stopDeskAgency: customer.stopDeskAgency
+          ? {
+              code: customer.stopDeskAgency.code,
+              name: customer.stopDeskAgency.name,
+              address: customer.stopDeskAgency.address,
+              phone: customer.stopDeskAgency.phone,
+            }
+          : undefined,
         note: customer.note ? customer.note.trim() : "",
       },
       deliveryMode: deliveryMode === "bureau" ? "bureau" : "domicile",

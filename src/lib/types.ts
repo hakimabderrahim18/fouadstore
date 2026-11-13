@@ -36,6 +36,14 @@ export interface CartItem {
 
 export type DeliveryMode = "domicile" | "bureau";
 
+export interface StopDeskAgency {
+  code?: string;
+  name: string;
+  nameAr?: string;
+  address: string;
+  phone?: string;
+}
+
 export interface OrderCustomer {
   fullName: string;
   phone: string;
@@ -43,6 +51,7 @@ export interface OrderCustomer {
   wilayaName: string;
   commune: string;
   address: string;
+  stopDeskAgency?: StopDeskAgency;
   note?: string;
 }
 
@@ -77,5 +86,7 @@ export interface Wilaya {
   nameAr: string;
   homeDeliveryFee: number;
   deskDeliveryFee: number;
+  hasStopDesk?: boolean;
+  stopDeskAgencies?: StopDeskAgency[];
   communes: string[];
 }

@@ -6,11 +6,11 @@ export function generateWhatsAppMessage(order: Order, lang: "fr" | "ar" = "fr"):
   const deliveryLabel =
     order.deliveryMode === "domicile"
       ? isAr
-        ? "توصيل إلى باب المنزل"
-        : "Livraison à domicile"
+        ? "توصيل إلى باب المنزل (NOEST Express)"
+        : "Livraison à domicile (NOEST Express)"
       : isAr
-      ? "استلام من مكتب التوصيل (Stop Desk)"
-      : "Livraison au bureau (Stop Desk)";
+      ? "استلام من مكتب التوصيل Stop Desk (NOEST Express)"
+      : "Récupération en agence Stop Desk (NOEST Express)";
 
   if (isAr) {
     let msg = `🛒 *طلب جديد من محل الإخوة زبوج (للزيوت ولوازم السيارات)*\n`;
@@ -23,12 +23,23 @@ export function generateWhatsAppMessage(order: Order, lang: "fr" | "ar" = "fr"):
     msg += `• *الهاتف:* ${order.customer.phone}\n`;
     msg += `• *الولاية:* ${order.customer.wilayaName}\n`;
     msg += `• *البلدية:* ${order.customer.commune}\n`;
-    msg += `• *العنوان:* ${order.customer.address}\n`;
+    if (order.deliveryMode === "domicile") {
+      msg += `• *العنوان:* ${order.customer.address}\n`;
+    }
     if (order.customer.note) {
       msg += `• *ملاحظة:* ${order.customer.note}\n`;
     }
 
-    msg += `\n🚚 *طريقة التوصيل:* ${deliveryLabel}\n\n`;
+    msg += `\n🚚 *طريقة التوصيل:* ${deliveryLabel}\n`;
+    if (order.deliveryMode === "bureau" && order.customer.stopDeskAgency) {
+      msg += `🏢 *مكتب الاستلام Stop Desk NOEST:*\n`;
+      msg += `   • *الاسم:* ${order.customer.stopDeskAgency.name}\n`;
+      msg += `   • *العنوان:* ${order.customer.stopDeskAgency.address}\n`;
+      if (order.customer.stopDeskAgency.phone) {
+        msg += `   • *هاتف المكتب:* ${order.customer.stopDeskAgency.phone}\n`;
+      }
+    }
+    msg += `\n`;
 
     msg += `🛍️ *المنتجات المطلوبة:*\n`;
     order.items.forEach((item, index) => {
@@ -42,7 +53,7 @@ export function generateWhatsAppMessage(order: Order, lang: "fr" | "ar" = "fr"):
 
     msg += `\n━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `💵 *المجموع الفرعي:* ${order.subtotal.toLocaleString("fr-FR")} د.ج\n`;
-    msg += `🚚 *تكلفة التوصيل:* ${order.shippingFee.toLocaleString("fr-FR")} د.ج\n`;
+    msg += `🚚 *تكلفة التوصيل (NOEST):* ${order.shippingFee.toLocaleString("fr-FR")} د.ج\n`;
     msg += `💰 *المجموع الإجمالي الدفع عند الاستلام:* *${order.total.toLocaleString("fr-FR")} د.ج*\n`;
     msg += `━━━━━━━━━━━━━━━━━━━━\n`;
     msg += `يرجى تأكيد طلبي وشكراً !`;
@@ -61,12 +72,23 @@ export function generateWhatsAppMessage(order: Order, lang: "fr" | "ar" = "fr"):
   msg += `• *Téléphone :* ${order.customer.phone}\n`;
   msg += `• *Wilaya :* ${order.customer.wilayaName}\n`;
   msg += `• *Commune :* ${order.customer.commune}\n`;
-  msg += `• *Adresse :* ${order.customer.address}\n`;
+  if (order.deliveryMode === "domicile") {
+    msg += `• *Adresse :* ${order.customer.address}\n`;
+  }
   if (order.customer.note) {
     msg += `• *Note :* ${order.customer.note}\n`;
   }
 
-  msg += `\n🚚 *MODE DE LIVRAISON :* ${deliveryLabel}\n\n`;
+  msg += `\n🚚 *MODE DE LIVRAISON :* ${deliveryLabel}\n`;
+  if (order.deliveryMode === "bureau" && order.customer.stopDeskAgency) {
+    msg += `🏢 *AGENCE DE RETRAIT STOP DESK NOEST :*\n`;
+    msg += `   • *Agence :* ${order.customer.stopDeskAgency.name}\n`;
+    msg += `   • *Adresse :* ${order.customer.stopDeskAgency.address}\n`;
+    if (order.customer.stopDeskAgency.phone) {
+      msg += `   • *Tél. Agence :* ${order.customer.stopDeskAgency.phone}\n`;
+    }
+  }
+  msg += `\n`;
 
   msg += `🛍️ *PRODUITS COMMANDÉS :*\n`;
   order.items.forEach((item, index) => {
@@ -80,7 +102,7 @@ export function generateWhatsAppMessage(order: Order, lang: "fr" | "ar" = "fr"):
 
   msg += `\n━━━━━━━━━━━━━━━━━━━━\n`;
   msg += `💵 *Sous-total :* ${order.subtotal.toLocaleString("fr-FR")} DA\n`;
-  msg += `🚚 *Frais de livraison :* ${order.shippingFee.toLocaleString("fr-FR")} DA\n`;
+  msg += `🚚 *Frais de livraison (NOEST) :* ${order.shippingFee.toLocaleString("fr-FR")} DA\n`;
   msg += `💰 *TOTAL À PAYER (Paiement à la livraison) :* *${order.total.toLocaleString("fr-FR")} DA*\n`;
   msg += `━━━━━━━━━━━━━━━━━━━━\n`;
   msg += `Merci de bien vouloir confirmer ma commande !`;
